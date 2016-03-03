@@ -15,6 +15,7 @@ int clockPin = 11;
 // Pin 10 is connected to the LOAD(/CS)-pin of both MAX7219s
 int csPin = 10;
 
+// Number of MAX7219s used (each 8x8)
 int numDevices = 2;
 // Potentiometer used to control the intensity of the LEDs
 int trimPot = A0;
