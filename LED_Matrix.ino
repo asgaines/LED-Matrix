@@ -1,26 +1,26 @@
- #include <utility.h>
+using namespace std;
+#include <LedControl.h>
+#include <utility.h>
 //#include <system_configuration.h>
 #include <StandardCplusplus.h>
 //#include <unwind-cxx.h>
 #include <vector>
-using namespace std;
-#include <LedControl.h>
 // alphabet file holds all characters for the scrolling text
 #include "alphabet.h"
 
-// Pin 12 is connected to the DATA IN-pin of the first MAX7219
+// dataPin is connected to the DATA IN-pin of the first MAX7219
 int dataPin = 12;
-// Pin 11 is connected to the CLK-pin of both MAX7219s
+// clockPin is connected to the CLK-pin of both MAX7219s
 int clockPin = 11;
-// Pin 10 is connected to the LOAD(/CS)-pin of both MAX7219s
+// csPin is connected to the LOAD(/CS)-pin of both MAX7219s
 int csPin = 10;
 
-// Number of MAX7219s used (each 8x8)
-int numDevices = 2;
-// Potentiometer used to control the intensity of the LEDs
+// Number of MAX7219/7221s used (each 8x8)
+const int numDevices = 2;
+// Potentiometer used to control the intensity of the LEDs. Optional
 int trimPot = A0;
-// North and South grids, currently connected in series
-int NSGrids = 5;
+// North and South grids, currently connected in series. Optional
+int AdditionalLights = 5;
 // Declare instance of the LedControl object
 LedControl lc = LedControl(dataPin, clockPin, csPin, numDevices);
 
@@ -29,43 +29,233 @@ int delayFactor = 10;
 // Used to control a beat
 int delayTime = 25;
 int intensity = 15;
-int readIntensity = 15; // This variable reads the new setting of the
+int readIntensity = 7; // This variable reads the new setting of the
 // potentiometer. If different from intensity, update the setting 
 // on the matrix
 //int message[23] = {41, 0, 76, 79, 86, 69, 0, 43, 69, 76, 76, 69, 89, 0, 46, 69, 85, 77, 65, 78, 78, 1, 0};
 int counter;
-String serialString = "Acressity"; // Default value if nothing read from Serial port
+// Default value if nothing read from Serial port. Change to whatever you'd like
+String serialString = "Acressity"; 
 vector<int> convertedMessage(serialString.length() * 6);
 // Toggles between functions
 // 0 = message, 1 = picture, 2 = starry night
 int functionID = 0;
 int picture[16] = {0, 0, 60, 90, 189, 24, 90, 255, 255, 90, 24, 189, 90, 60, 0, 0};
 
+// Variables for snake game
+int numVertebrae = 5; // Starting length of snake
+const int numLEDs = numDevices * 64; // Total number of possible vertebrae of snake, one for each LED before victory
+int snake[numLEDs][2];
+char snakeDirection;
+const char UP = 'w';
+const char LEFT = 'a';
+const char DOWN = 's';
+const char RIGHT = 'd';
+int nextSnakeSpot[2];
+int snakeDelay = 500;
+int snakeFruit[2];
+
 void setup() {
+  // LedControl library handles all INPUT/OUTPUT declarations for lc
   for (int address = 0; address < numDevices; address++) {
     // Wake up display #1 (by un-shutting it down--
     // powersaving mode in beginning)
     lc.shutdown(address, false);
     // Set intensity for display #1 (from 0-15)
     lc.setIntensity(address, intensity);
-    lc.clearDisplay(address); // Reset display #1
+    lc.clearDisplay(address); // Reset display
   }
   pinMode(trimPot, INPUT);
-  pinMode(NSGrids, OUTPUT);
+  pinMode(AdditionalLights, OUTPUT);
   Serial.begin(9600);
+  // Initialize random numbers, reading noise from Arduino input pins
+  randomSeed(analogRead(A6)); // Read from unused pin!
   // Initialize the message
   //convertMessage(serialString);
   //displayMessage();
-
-  /* Library handles all INPUT/OUTPUT declarations for lc */
 }
 
 void loop() {
   // updateIntensity();
-  // nightLight();
-  serialPicture();
+  //nightLight();
+  // serialPicture();
   // serialMessage();
-  // flashNSGrids(250);
+  // flashAdditionalLights(250);
+  playSnake();
+}
+
+void playSnake() {
+  // Initialize the snake
+  snake[0][0] = 3; // Tail row
+  snake[0][1] = 0; // Tail column
+  snake[1][0] = 3;
+  snake[1][1] = 1;
+  snake[2][0] = 3;
+  snake[2][1] = 2;
+  snake[3][0] = 3;
+  snake[3][1] = 3;
+  snake[4][0] = 3; // Head row
+  snake[4][1] = 4; // Head column
+  numVertebrae = 5;
+  snakeDirection = RIGHT;
+  snakePositionFruit();
+  
+  while (!victory() && !gameOver()) {
+    displaySnake();
+    displayFruit();
+
+    // Retrieve direction to move from serial port
+    if (Serial.available() > 0) {
+      snakeDirection = Serial.read();
+    }
+
+    // Move head to new location based on direction
+    switch (snakeDirection) {
+      case UP:
+        nextSnakeSpot[0] = snake[numVertebrae - 1][0] - 1;
+        nextSnakeSpot[1] = snake[numVertebrae - 1][1];
+        if (overlap(nextSnakeSpot, snakeFruit)) {
+          snakeEatFruit();
+        } else {
+          moveVertebraeForward();
+          snake[numVertebrae - 1][0] = nextSnakeSpot[0];
+        }
+        break;
+      case DOWN:
+        nextSnakeSpot[0] = snake[numVertebrae - 1][0] + 1;
+        nextSnakeSpot[1] = snake[numVertebrae - 1][1];
+        if (overlap(nextSnakeSpot, snakeFruit)) {
+          snakeEatFruit();
+        } else {
+          moveVertebraeForward();
+          snake[numVertebrae - 1][0] = nextSnakeSpot[0];
+        }
+        break;
+      case LEFT:
+        nextSnakeSpot[0] = snake[numVertebrae - 1][0];
+        nextSnakeSpot[1] = snake[numVertebrae - 1][1] - 1;
+        if (overlap(nextSnakeSpot, snakeFruit)) {
+          snakeEatFruit();
+        } else {
+          moveVertebraeForward();
+          snake[numVertebrae - 1][1] = nextSnakeSpot[1];
+        }
+        break;
+      case RIGHT:
+        nextSnakeSpot[0] = snake[numVertebrae - 1][0];
+        nextSnakeSpot[1] = snake[numVertebrae - 1][1] + 1;
+        if (overlap(nextSnakeSpot, snakeFruit)) {
+          snakeEatFruit();
+        } else {
+          moveVertebraeForward();
+          snake[numVertebrae - 1][1] = nextSnakeSpot[1];
+        }
+        break;
+    }
+
+    delay(snakeDelay - 2 * numVertebrae); // Slight speed increase after each feeding
+    
+    lc.clearDisplay(0);
+    lc.clearDisplay(1);
+  }
+}
+
+void moveVertebraeForward() {
+  // Move all vertebrae forward
+  for (int vertebra = 1; vertebra < numVertebrae; vertebra++) {
+    snake[vertebra - 1][0] = snake[vertebra][0];
+    snake[vertebra - 1][1] = snake[vertebra][1];
+  }
+}
+
+bool overlap(int spot1[], int spot2[]) {
+  return (spot1[0] == spot2[0] && spot1[1] == spot2[1]);
+}
+
+void snakeEatFruit() {
+  // Grow the length of the snake
+  snake[numVertebrae][0] = snakeFruit[0];
+  snake[numVertebrae][1] = snakeFruit[1];
+  numVertebrae++;
+
+  // Put a new piece of fruit out there for the hungry fella
+  snakePositionFruit();
+}
+
+void snakePositionFruit() {
+  // Create array of all free spaces
+  int freeSpaces[numLEDs - numVertebrae][2];
+  int counter = 0;
+  for (int row = 0; row < 8; row++) {
+    for (int column = 0; column < numDevices * 8; column++) {
+      int spot[2] = {row, column};
+      int spotFree = true;
+      for (int vertebra = 0; vertebra < numVertebrae; vertebra++) {
+        int vert[2] = {snake[vertebra][0], snake[vertebra][1]};
+        if (overlap(spot, vert)) {
+          spotFree = false;
+          break; 
+        }
+      }
+      if (spotFree) {
+        freeSpaces[counter][0] = spot[0];
+        freeSpaces[counter][1] = spot[1];
+        counter++;
+      }
+    }
+  }
+
+  int randomChoice = random(numLEDs - numVertebrae);
+  snakeFruit[0] = freeSpaces[randomChoice][0];
+  snakeFruit[1] = freeSpaces[randomChoice][1];
+}
+
+void displaySnake() {
+  for (int vertebra = 0; vertebra < numVertebrae; vertebra++) {
+    lc.setLed(snake[vertebra][1] / 8, snake[vertebra][0], snake[vertebra][1] % 8, true);
+  }
+}
+
+void displayFruit() {
+  lc.setLed(snakeFruit[1] / 8, snakeFruit[0], snakeFruit[1] % 8, true);
+}
+
+bool victory() {
+  if (numVertebrae == numLEDs) {
+    Serial.println("VICTORY!");
+    return true;
+  }
+  return false;
+}
+
+bool gameOver() {
+  int snakeHead[2] = {snake[numVertebrae - 1][0], snake[numVertebrae - 1][1]};
+  int gameOver = false;
+  // Check if snake has run into wall
+  if (snakeHead[0] >= 8 || snakeHead[0] < 0 || snakeHead[1] >= (numDevices * 8) || snakeHead[1] < 0) {
+    gameOver = true;
+  }
+
+  // Check if snake has bitten itself
+  for (int vertebra = 0; vertebra < numVertebrae - 1; vertebra++) {
+    if (overlap(snakeHead, snake[vertebra])) {
+      gameOver = true;
+    }
+  }
+
+  if (gameOver) {
+    Serial.println("GAME OVER");
+    Serial.print("Score: ");
+    Serial.println(numVertebrae - 5);
+    Serial.println();
+  }
+  
+  return gameOver;
+}
+
+void showMessage(String message) {
+  convertMessage(message);
+  displayMessage();
 }
 
 void twoSettings() {
@@ -94,20 +284,20 @@ void freakOut() {
   // Gets some random columns and rows flashing to the beat
   // with the NS Grids
   if (counter % 2 == 0) {
-    onNSGrids();
+    onAdditionalLights();
   }
   randomRow();
   if (counter % 2 == 1) {
-    offNSGrids();
+    offAdditionalLights();
   }
   randomColumn();
 }
 
 void nightLight() {
   // night sky and a fade in the NS grids
-  brightenNSGrids();
+  brightenAdditionalLights();
   nightSky();
-  fadeNSGrids();
+  fadeAdditionalLights();
   nightSky();
 }
 
@@ -138,16 +328,16 @@ void updateIntensity() {
   }
 }
 
-void flashNSGrids(int beatDelay) {
-  onNSGrids();
+void flashAdditionalLights(int beatDelay) {
+  onAdditionalLights();
   delay(beatDelay);
-  offNSGrids();
+  offAdditionalLights();
   delay(beatDelay);
 }
 
-void brightenNSGrids() {
+void brightenAdditionalLights() {
   for (int value = 0; value < map(intensity, -1, 15, 0, 255); value++) {
-    analogWrite(NSGrids, value);
+    analogWrite(AdditionalLights, value);
     // The lower the light setting, the slower they fade/brighten,
     // keeping the NS grids from flashing at low intensity
     // + 1 to keep from dividing by 0
@@ -155,9 +345,9 @@ void brightenNSGrids() {
   }
 }
 
-void fadeNSGrids() {
+void fadeAdditionalLights() {
   for (int value = map(intensity, -1, 15, 0, 255); value >= 0; value--) {
-    analogWrite(NSGrids, value);
+    analogWrite(AdditionalLights, value);
     // The lower the light setting, the slower they fade/brighten,
     // keeping the NS grids from flashing at low intensity
     // + 1 to keep from dividing by 0
@@ -165,12 +355,12 @@ void fadeNSGrids() {
   }
 }
 
-void onNSGrids() {
-  analogWrite(NSGrids, map(intensity, -1, 15, 0, 255));
+void onAdditionalLights() {
+  analogWrite(AdditionalLights, map(intensity, -1, 15, 0, 255));
 }
 
-void offNSGrids() {
-  analogWrite(NSGrids, 0);
+void offAdditionalLights() {
+  analogWrite(AdditionalLights, 0);
 }
 
 void randomRow() {
