@@ -51,6 +51,7 @@ const char UP = 'w';
 const char LEFT = 'a';
 const char DOWN = 's';
 const char RIGHT = 'd';
+const char PAUSE = 'p';
 int nextSnakeSpot[2];
 int snakeDelay = 500;
 int snakeFruit[2];
@@ -76,38 +77,23 @@ void setup() {
 }
 
 void loop() {
-  // updateIntensity();
-  //nightLight();
-  // serialPicture();
-  // serialMessage();
-  // flashAdditionalLights(250);
-  playSnake();
+  nightSky();
+  // playSnake();
+  // meditate();
 }
 
 void playSnake() {
-  // Initialize the snake
-  snake[0][0] = 3; // Tail row
-  snake[0][1] = 0; // Tail column
-  snake[1][0] = 3;
-  snake[1][1] = 1;
-  snake[2][0] = 3;
-  snake[2][1] = 2;
-  snake[3][0] = 3;
-  snake[3][1] = 3;
-  snake[4][0] = 3; // Head row
-  snake[4][1] = 4; // Head column
-  numVertebrae = 5;
-  snakeDirection = RIGHT;
-  snakePositionFruit();
+  initializeSnake();
   
   while (!victory() && !gameOver()) {
     displaySnake();
     displayFruit();
-
+    
     // Retrieve direction to move from serial port
     if (Serial.available() > 0) {
       snakeDirection = Serial.read();
     }
+    Serial.println(Serial.available());
 
     // Move head to new location based on direction
     switch (snakeDirection) {
@@ -151,6 +137,9 @@ void playSnake() {
           snake[numVertebrae - 1][1] = nextSnakeSpot[1];
         }
         break;
+      default:
+        // Any other key pauses the gameplay
+        continue;
     }
 
     delay(snakeDelay - 2 * numVertebrae); // Slight speed increase after each feeding
@@ -158,6 +147,24 @@ void playSnake() {
     lc.clearDisplay(0);
     lc.clearDisplay(1);
   }
+}
+
+void initializeSnake() {
+  snake[0][0] = 3; // Tail row
+  snake[0][1] = 0; // Tail column
+  snake[1][0] = 3;
+  snake[1][1] = 1;
+  snake[2][0] = 3;
+  snake[2][1] = 2;
+  snake[3][0] = 3;
+  snake[3][1] = 3;
+  snake[4][0] = 3; // Head row
+  snake[4][1] = 4; // Head column
+  numVertebrae = 5;
+  snakeDirection = RIGHT;
+  snakePositionFruit();
+  Serial.println("NEW GAME");
+  delay(100);
 }
 
 void moveVertebraeForward() {
