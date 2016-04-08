@@ -2,7 +2,7 @@
 
 Provides a number of functions for controlling LED matrices using an Arduino with LedControl library.
 
-[[img/snake.jpg]]
+![Snake Game](img/snake.jpg)
 
 ## Functions
 - Word scrolling feature with input from keyboard
