@@ -1,6 +1,6 @@
 # LED Matrix Control for Arduino
 
-Provides a number of functions for controlling LED matrices using an Arduino with LedControl library.
+Provides a number of functions for controlling LED matrices using an Arduino with LedControl library. Image taken of Snake game in package.
 
 ![Snake Game](img/snake.jpg)
 
