@@ -2,6 +2,8 @@
 
 Provides a number of functions for controlling LED matrices using an Arduino with LedControl library.
 
+[Snake Game](img/snake.jpg)
+
 ## Functions
 - Word scrolling feature with input from keyboard
 - Sketching with mouse by using [this Processing sketch](https://github.com/asgaines/LED-Matrix-Processing-Sketch)
