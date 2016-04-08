@@ -29,7 +29,8 @@ int delayFactor = 10;
 // Used to control a beat
 int delayTime = 25;
 int intensity = 15;
-int readIntensity = 7; // This variable reads the new setting of the
+int nightIntensity = 9;
+int readIntensity = 15; // This variable reads the new setting of the
 // potentiometer. If different from intensity, update the setting 
 // on the matrix
 //int message[23] = {41, 0, 76, 79, 86, 69, 0, 43, 69, 76, 76, 69, 89, 0, 46, 69, 85, 77, 65, 78, 78, 1, 0};
@@ -250,14 +251,54 @@ bool gameOver() {
     }
   }
 
-  if (gameOver) {
-    Serial.println("GAME OVER");
-    Serial.print("Score: ");
-    Serial.println(numVertebrae - 5);
-    Serial.println();
-  }
+//  if (gameOver) {
+//    Serial.print("GAME OVER. ");
+//    Serial.print("Score: ");
+//    Serial.println(numVertebrae - 5);
+//    Serial.println();
+//  }
   
   return gameOver;
+}
+
+void meditate() {
+  showMessage("Begin...");
+  
+  // Wait 20 minutes
+  delay(1200000);
+
+  // Slowly turn lights on
+  for (int brightness = 0; brightness < 16; brightness++) {
+    for (int address = 0; address < numDevices; address++) {
+      lc.setIntensity(address, brightness);
+      for (int row = 0; row < 8; row++) {
+        lc.setRow(address, row, 255);
+      }
+    }
+    delay(7500); // Will take two minutes to reach full intensity while coming out of meditation
+  }
+
+  // Wake up!
+  while (true) {
+    for (int brightness = 15; brightness >= 0; brightness--) {
+      for (int address = 0; address < numDevices; address++) {
+        lc.setIntensity(address, brightness);
+        for (int row = 0; row < 8; row++) {
+          lc.setRow(address, row, 255);
+        }
+      }
+      delay(25);
+    }
+    for (int brightness = 0; brightness < 16; brightness++) {
+      for (int address = 0; address < numDevices; address++) {
+        lc.setIntensity(address, brightness);
+        for (int row = 0; row < 8; row++) {
+          lc.setRow(address, row, 255);
+        }
+      }
+      delay(25);
+    }
+  }
 }
 
 void showMessage(String message) {
@@ -271,7 +312,7 @@ void twoSettings() {
   if (intensity > 7) {
     freakOut();
   } else {
-    nightLight();
+    nightSky();
   }
 }
 
@@ -298,14 +339,6 @@ void freakOut() {
     offAdditionalLights();
   }
   randomColumn();
-}
-
-void nightLight() {
-  // night sky and a fade in the NS grids
-  brightenAdditionalLights();
-  nightSky();
-  fadeAdditionalLights();
-  nightSky();
 }
 
 void updateIntensity() {
@@ -455,15 +488,16 @@ void columns() {
 
 void nightSky() {
   int iterations = 1;
+  int delayFactor = 250;
   for (int turnon = 0; turnon < iterations; turnon++) {
     lc.setLed(random(0, 2), random(0, 8), random(0, 8), true);
-    //delay(75);
+    delay(delayFactor);
   }
   // Perform the iteration 4x as many times on the turning off
   // of the LEDs to have fewer on at any one time (1/4 lit)
   for (int turnoff = 0; turnoff < iterations * 4; turnoff++) {
     lc.setLed(random(0, 2), random(0, 8), random(0, 8), false);
-    //delay(75);
+    delay(delayFactor);
   }
 }
 
