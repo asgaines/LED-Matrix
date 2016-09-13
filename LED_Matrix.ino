@@ -100,7 +100,8 @@ void playSnake() {
     if (Serial.available() > 0) {
       snakeDirection = Serial.read();
     }
-    Serial.println(Serial.available());
+    Serial.println(numVertebrae - 5);
+    // Serial.println(Serial.available());
 
     // Move head to new location based on direction
     switch (snakeDirection) {
@@ -267,13 +268,60 @@ bool gameOver() {
   return gameOver;
 }
 
-void meditate() {
-  showMessage("Begin...");
-  
-  // Wait 20 minutes
-  delay(1200000);
+void meditate(int minutes) {
+  // LEDs for the clock for 64 possible minutes
+  // LEDs spiral from center to perimeter of 8x8 grid
+  int clockLEDs[64][2] = {
+    {4, 4}, {4, 3}, {3, 3}, {3, 4}, {3, 5},
+    {4, 5}, {5, 5}, {5, 4}, {5, 3}, {5, 2},
+    {4, 2}, {3, 2}, {2, 2}, {2, 3}, {2, 4},
+    {2, 5}, {2, 6}, {3, 6}, {4, 6}, {5, 6},
+    {6, 6}, {6, 5}, {6, 4}, {6, 3}, {6, 2},
+    {6, 1}, {5, 1}, {4, 1}, {3, 1}, {2, 1},
+    {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5},
+    {1, 6}, {1, 7}, {2, 7}, {3, 7}, {4, 7},
+    {5, 7}, {6, 7}, {7, 7}, {7, 6}, {7, 5},
+    {7, 4}, {7, 3}, {7, 2}, {7, 1}, {7, 0},
+    {6, 0}, {5, 0}, {4, 0}, {3, 0}, {2, 0},
+    {1, 0}, {0, 0}, {0, 1}, {0, 2}, {0, 3},
+    {0, 4}, {0, 5}, {0, 6}, {0, 7},
+  };
 
-  // Slowly turn lights on
+  int sessionClockLEDs[minutes][2];
+  // Load necessary LEDs based on session minutes required
+  for (int i = 0; i < minutes; i++ ) {
+    sessionClockLEDs[i][0] = clockLEDs[i][0];
+    sessionClockLEDs[i][1] = clockLEDs[i][1];
+  }
+
+  // Display the LEDs to initialize the clock
+  for (int minute = 0; minute < minutes; minute++) {
+    for (int address = 0; address < numDevices; address++){
+      lc.setLed(address, sessionClockLEDs[minute][0], sessionClockLEDs[minute][1], true);
+    }
+    delay(50 + 10 * minute);
+  }
+
+  // Wait 20 minutes
+  int start = millis();
+  int secSinceStart = (millis() - start) / 1000;
+  int minutesIntoSession = 0;
+  while (secSinceStart < minutes * 60) {
+    // These LEDs tracks the # minutes into meditation for reference
+    // Similar to a loading bar
+    secSinceStart = (millis() - start) / 1000;
+    minutesIntoSession = secSinceStart / 60;
+    if (minutesIntoSession) {
+      // Black out LEDs representing each minute having passed
+      for (int address = 0; address < numDevices; address++) {
+        lc.setLed(address, sessionClockLEDs[minutes - minutesIntoSession][0], sessionClockLEDs[minutes - minutesIntoSession][1], false);
+      }
+    }
+    Serial.println(secSinceStart);
+    delay(1000);
+  }
+
+  // Meditation session is over. Slowly turn lights on over 2 minutes
   for (int brightness = 0; brightness < 16; brightness++) {
     for (int address = 0; address < numDevices; address++) {
       lc.setIntensity(address, brightness);
@@ -281,28 +329,22 @@ void meditate() {
         lc.setRow(address, row, 255);
       }
     }
-    delay(7500); // Will take two minutes to reach full intensity while coming out of meditation
+    delay(7500);
   }
 
-  // Wake up!
+  // Wake up! Oscillate lights
   while (true) {
-    for (int brightness = 15; brightness >= 0; brightness--) {
+    for (int brightness = 15; brightness > 0; brightness--) {
       for (int address = 0; address < numDevices; address++) {
         lc.setIntensity(address, brightness);
-        for (int row = 0; row < 8; row++) {
-          lc.setRow(address, row, 255);
-        }
       }
-      delay(25);
+      delay(45);
     }
     for (int brightness = 0; brightness < 16; brightness++) {
       for (int address = 0; address < numDevices; address++) {
         lc.setIntensity(address, brightness);
-        for (int row = 0; row < 8; row++) {
-          lc.setRow(address, row, 255);
-        }
       }
-      delay(25);
+      delay(45);
     }
   }
 }
