@@ -550,6 +550,14 @@ void nightSky() {
   }
 }
 
+void nightLight() {
+  int counter = 0;
+  nightSky();
+  brightenAddlLights();
+  nightSky();
+  fadeAddlLights();
+}
+
 // Section for decoding Serial data -> message to be displayed
 void serialMessage() {
   if (Serial.available() > 0) {
