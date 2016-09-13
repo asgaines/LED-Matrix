@@ -78,9 +78,15 @@ void setup() {
 }
 
 void loop() {
-  nightSky();
+  /*
+   * This code is run over and over indefinitely.
+   * Choose function you wish to use and call it here.
+   */
+
+  nightLight();
   // playSnake();
-  // meditate();
+  // meditate(20);
+  // serialPicture();
 }
 
 void playSnake() {
