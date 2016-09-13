@@ -19,8 +19,8 @@ int csPin = 10;
 const int numDevices = 2;
 // Potentiometer used to control the intensity of the LEDs. Optional
 int trimPot = A0;
-// North and South grids, currently connected in series. Optional
-int AdditionalLights = 5;
+// Separate lights. Optional
+int addlLight = 5;
 // Declare instance of the LedControl object
 LedControl lc = LedControl(dataPin, clockPin, csPin, numDevices);
 
@@ -68,7 +68,7 @@ void setup() {
     lc.clearDisplay(address); // Reset display
   }
   pinMode(trimPot, INPUT);
-  pinMode(AdditionalLights, OUTPUT);
+  pinMode(addlLight, OUTPUT);
   Serial.begin(9600);
   // Initialize random numbers, reading noise from Arduino input pins
   randomSeed(analogRead(A6)); // Read from unused pin!
@@ -377,7 +377,7 @@ void flashAdditionalLights(int beatDelay) {
 
 void brightenAdditionalLights() {
   for (int value = 0; value < map(intensity, -1, 15, 0, 255); value++) {
-    analogWrite(AdditionalLights, value);
+    analogWrite(addlLight, value);
     // The lower the light setting, the slower they fade/brighten,
     // keeping the NS grids from flashing at low intensity
     // + 1 to keep from dividing by 0
@@ -387,7 +387,7 @@ void brightenAdditionalLights() {
 
 void fadeAdditionalLights() {
   for (int value = map(intensity, -1, 15, 0, 255); value >= 0; value--) {
-    analogWrite(AdditionalLights, value);
+    analogWrite(addlLight, value);
     // The lower the light setting, the slower they fade/brighten,
     // keeping the NS grids from flashing at low intensity
     // + 1 to keep from dividing by 0
@@ -396,11 +396,12 @@ void fadeAdditionalLights() {
 }
 
 void onAdditionalLights() {
-  analogWrite(AdditionalLights, map(intensity, -1, 15, 0, 255));
+  int value = map(intensity, -1, 15, 0, 255);
+  analogWrite(addlLight, value);
 }
 
 void offAdditionalLights() {
-  analogWrite(AdditionalLights, 0);
+  analogWrite(addlLight, 0);
 }
 
 void randomRow() {
