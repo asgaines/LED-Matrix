@@ -13,11 +13,11 @@ Provides a number of functions for controlling LED matrices using an Arduino wit
     
 ## Installing
 - First install [LedControl](https://github.com/wayoda/LedControl)
-- See [Arduino library install instructions](https://www.arduino.cc/en/Guide/Libraries), or try the following steps:
-- Download this project ZIP file
-- Unzip into Arduino sketchbook directory (often `~/Documents/Arduino`)
-- Open Arduino application (close first if already open to restart)
-- Select `File > Sketchbook > LED_Matrix`
+- See [Arduino library install instructions](https://www.arduino.cc/en/Guide/Libraries), or follow the following steps:
+    - Download this project ZIP file
+    - Unzip into Arduino sketchbook directory (typically `~/Documents/Arduino`)
+    - Open Arduino application (close first if already open to restart)
+    - Select `File > Sketchbook > LED_Matrix`
 
 ## Usage
 - Select one of the functions you wish to run and call function within `loop()`
