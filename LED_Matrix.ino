@@ -338,11 +338,11 @@ void freakOut() {
   // Gets some random columns and rows flashing to the beat
   // with the NS Grids
   if (counter % 2 == 0) {
-    onAdditionalLights();
+    onAddlLights();
   }
   randomRow();
   if (counter % 2 == 1) {
-    offAdditionalLights();
+    offAddlLights();
   }
   randomColumn();
 }
@@ -374,14 +374,14 @@ void updateIntensity() {
   }
 }
 
-void flashAdditionalLights(int beatDelay) {
-  onAdditionalLights();
+void flashAddlLights(int beatDelay) {
+  onAddlLights();
   delay(beatDelay);
-  offAdditionalLights();
+  offAddlLights();
   delay(beatDelay);
 }
 
-void brightenAdditionalLights() {
+void brightenAddlLights() {
   for (int value = 0; value < map(intensity, -1, 15, 0, 255); value++) {
     analogWrite(addlLight, value);
     // The lower the light setting, the slower they fade/brighten,
@@ -391,7 +391,7 @@ void brightenAdditionalLights() {
   }
 }
 
-void fadeAdditionalLights() {
+void fadeAddlLights() {
   for (int value = map(intensity, -1, 15, 0, 255); value >= 0; value--) {
     analogWrite(addlLight, value);
     // The lower the light setting, the slower they fade/brighten,
@@ -401,12 +401,12 @@ void fadeAdditionalLights() {
   }
 }
 
-void onAdditionalLights() {
+void onAddlLights() {
   int value = map(intensity, -1, 15, 0, 255);
   analogWrite(addlLight, value);
 }
 
-void offAdditionalLights() {
+void offAddlLights() {
   analogWrite(addlLight, 0);
 }
 
